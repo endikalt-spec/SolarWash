@@ -90,7 +90,11 @@ work_orders(id, site_id, string_id_nullable, trigger_reason, verdict_evidence_id
             completed_at, completed_by_user_id, pr_before_pct, pr_after_pct, notes)
   -- trigger_reason: MANUAL | VERDICT_SOILING | PR_DROP | SCHEDULED | DUST_EVENT
   -- status: PENDING_APPROVAL | REJECTED | QUEUED | BLOCKED_PEAK_HOURS |
-  --         BLOCKED_RAIN_FORECAST | SATISFIED_BY_RAIN | DISPATCHED | IN_PROGRESS | COMPLETED
+  --         BLOCKED_RAIN_FORECAST | SATISFIED_BY_RAIN | DISPATCHED | IN_PROGRESS |
+  --         COMPLETED | CANCELLED
+  -- CANCELLED is reachable from QUEUED/BLOCKED_*/DISPATCHED — an operator aborting
+  -- an already-queued or dispatched job (crew unavailable, conditions changed).
+  -- Distinct from REJECTED, which only applies to declining a PENDING_APPROVAL suggestion.
 guardrail_settings(site_id, peak_start, peak_end, rain_delay_enabled, rain_delay_hours)
 ```
 
@@ -102,7 +106,7 @@ guardrail_settings(site_id, peak_start, peak_end, rain_delay_enabled, rain_delay
 
 `sunspecModbus.js`'s `readInverterSunSpec()` and `inverterAdapters.js`'s `pollInverter()` MODBUS_TCP branch are **already fully implemented**, not stubs — verified by reading the source. `assessSite.js`'s `createSiteAssessor(site).poll()` already chains irradiance → inverter read → `prEngine.evaluateSite()` → soiling tracker.
 
-`backend/scheduler.js` (adapted from `console-server/scheduler.js`, which already implements this pattern) creates one `assessor` per site with a Modbus-reachable inverter and polls it on an interval (default from `sunspecModbus.js: updateSeconds`, ~1s locally but rate-limited sensibly for a scheduled loop, not per-second in v1). Each poll writes a row to `telemetry_readings`; when the soiling tracker's classification changes, write a row to `soiling_events`.
+`backend/scheduler.js` (adapted from `console-server/scheduler.js`, which already implements this pattern) creates one `assessor` per site with a Modbus-reachable inverter and polls it on a fixed interval, **default 60 seconds per site** (not the ~1s figure in `sunspecModbus.js: updateSeconds`, which describes the register's own refresh rate, not a sensible polling cadence for a multi-site scheduler) — configurable per site via `guardrail_settings` or a new per-site `poll_interval_seconds` column if finer control turns out to be needed. Each poll writes a row to `telemetry_readings`; when the soiling tracker's classification changes, write a row to `soiling_events`.
 
 `LOCAL_HTTP` and `CLOUD_API` transports remain stubs (throwing `TODO` errors) — out of scope per Non-goals.
 
@@ -140,7 +144,9 @@ Each verdict carries `evidence` — the specific `soiling_events.id` and `therma
 
 ### 4. Cleaning schedule & dispatch
 
-Work orders are created by five trigger types (`MANUAL`, `VERDICT_SOILING`, `PR_DROP`, `SCHEDULED`, `DUST_EVENT` — see Data model). **Confirmed decision: auto-generated orders (`VERDICT_SOILING`, `PR_DROP`, `DUST_EVENT`) are created in `PENDING_APPROVAL` status and require an operator/admin to approve before they can be dispatched** — the system never dispatches a real-world crew autonomously.
+Work orders are created by five trigger types (`MANUAL`, `VERDICT_SOILING`, `PR_DROP`, `SCHEDULED`, `DUST_EVENT` — see Data model). **Confirmed decision: orders triggered by `VERDICT_SOILING`, `PR_DROP`, or `DUST_EVENT` are created in `PENDING_APPROVAL` status and require an operator/admin to approve before they can be dispatched** — the system never dispatches a real-world crew autonomously based on its own inferred verdicts.
+
+`MANUAL` and `SCHEDULED` orders skip `PENDING_APPROVAL` and go straight to `QUEUED`: a `MANUAL` order's approval already happened when the operator clicked "clean now," and a `SCHEDULED` order's approval already happened when an admin set up the recurring `cleaning_schedules` rule — gating them again would be redundant, not safer. Any queued or in-flight order (any trigger type) can be moved to `CANCELLED` by an operator/admin at any point before `COMPLETED`.
 
 `DUST_EVENT` detection is a heuristic, not a separate data feed: if a large fraction of a site's strings show a correlated, simultaneous PR drop in the same short window (distinct from a single string drifting down over days, which is soiling's normal signature), that is itself the dust-storm signal.
 
