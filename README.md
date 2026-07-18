@@ -17,6 +17,7 @@ prototypes into **one product**: a single role-scoped **web** app on one backend
 solarwash-web.jsx          THE single frontend — role-scoped web app (admin/operator/viewer, i18n RU/EN/HE)
 
 backend-proxy/             SHIPPING backend — what solarwash-web.jsx talks to today
+  package.json               Node service metadata, scripts, and runtime dependencies
   inverter-proxy.js          /api/inverters, /api/chat  (Express)
   inverter-connectors.js     self-contained vendor connectors
   weather-proxy.js           standalone weather proxy
@@ -34,6 +35,29 @@ engine-and-console/        REAL IP — richer stack, TO BE MERGED into backend-p
 docs/                      strategy/research artifacts (not product code)
 _archive/                  retired frontends + duplicates (reversible; safe to delete once confident)
 ```
+
+
+## Backend proxy service
+
+`backend-proxy/` is an independent Node service. Run it from that directory:
+
+```bash
+npm install
+npm start
+```
+
+For local development, use `npm run dev`; it starts `inverter-proxy.js` with
+`NODE_ENV=development`.
+
+Required environment variables:
+
+| Variable | Purpose | Default / example |
+| --- | --- | --- |
+| `PORT` | HTTP port for the backend proxy. | `8787` |
+| `ALLOWED_ORIGIN` | CORS origin allowed to call the proxy. Use `*` for open local access. | `http://localhost:3000` |
+| `ANTHROPIC_API_KEY` | Server-side Anthropic API key used by `/api/chat`. | No default; must be set for AI chat. |
+
+Deployment note: add a `Dockerfile` or unified deployment config for this service later.
 
 ## The one open decision — wire the engine into the shipping backend
 

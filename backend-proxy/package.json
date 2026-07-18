@@ -1,0 +1,14 @@
+{
+  "name": "backend-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node inverter-proxy.js",
+    "dev": "NODE_ENV=development node inverter-proxy.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
