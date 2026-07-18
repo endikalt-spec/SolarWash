@@ -4,13 +4,13 @@
  * password -> login. Dashboard returns ONLY the client-safe projection.
  */
 import { Router } from "express";
-import { db, newId, latestSnapshot } from "../lib/store.js";
+import { db, newId, latestSnapshot } from "./store.js";
 import {
   requireAuth, requireRole, hashPassword, verifyPassword, signToken,
   genUserCode, genOtp, hashOtp,
-} from "../lib/auth.js";
-import { toCustomerView } from "../lib/projection.js";
-import { decisionFor } from "../lib/scheduler.js";
+} from "./auth.js";
+import { toCustomerView } from "./projection.js";
+import { decisionFor } from "./scheduler.js";
 
 const r = Router();
 const DEV = process.env.NODE_ENV !== "production";

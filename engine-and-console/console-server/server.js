@@ -8,11 +8,11 @@
  */
 import express from "express";
 import cors from "cors";
-import { db, newId } from "./lib/store.js";
-import { hashPassword, hashOtp } from "./lib/auth.js";
-import operatorRoutes from "./routes/operator.js";
-import customerRoutes from "./routes/customer.js";
-import { startPolling } from "./lib/scheduler.js";
+import { db, newId } from "./store.js";
+import { hashPassword, hashOtp } from "./auth.js";
+import operatorRoutes from "./operator.js";
+import customerRoutes from "./customer.js";
+import { startPolling } from "./scheduler.js";
 
 const app = express();
 app.use(cors());

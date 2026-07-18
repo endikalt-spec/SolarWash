@@ -3,11 +3,11 @@
  * All routes require role operator|admin. Returns INTERNAL diagnostics.
  */
 import { Router } from "express";
-import { db, newId } from "../lib/store.js";
-import { requireAuth, requireRole, verifyPassword, signToken } from "../lib/auth.js";
-import { toOperatorView } from "../lib/projection.js";
-import { pollNow, startPolling, stopPolling, decisionFor } from "../lib/scheduler.js";
-import INVERTER_ADAPTERS, { getAdapter } from "../../inverterAdapters.js";
+import { db, newId } from "./store.js";
+import { requireAuth, requireRole, verifyPassword, signToken } from "./auth.js";
+import { toOperatorView } from "./projection.js";
+import { pollNow, startPolling, stopPolling, decisionFor } from "./scheduler.js";
+import INVERTER_ADAPTERS, { getAdapter } from "../engine/inverterAdapters.js";
 
 const r = Router();
 

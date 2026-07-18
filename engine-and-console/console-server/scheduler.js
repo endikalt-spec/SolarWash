@@ -5,9 +5,9 @@
  * Demo sites (site.demo === true) use a physics-based simulator so the system
  * runs end-to-end with no hardware (onboarding, sales demos, tests).
  */
-import { createSiteAssessor } from "../../assessSite.js";
-import { clearSkyIneichen } from "../../irradiance.js";
-import { solarPosition, poaIrradiance, cellTemp, expectedDcPowerW } from "../../prEngine.js";
+import { createSiteAssessor } from "../engine/assessSite.js";
+import { clearSkyIneichen } from "../engine/irradiance.js";
+import { solarPosition, poaIrradiance, cellTemp, expectedDcPowerW } from "../engine/prEngine.js";
 import { db, pushSnapshot } from "./store.js";
 
 const timers = new Map();      // siteId -> interval handle
